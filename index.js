@@ -1,4 +1,3 @@
-const Stripe = require('stripe');
 const pug = require('pug');
 const wkhtmltopdf = require('wkhtmltopdf');
 const moment = require('moment');
@@ -6,15 +5,16 @@ const path = require('path');
 const fs = require('fs');
 const sizeOf = require('image-size');
 
-const template = require(`./templates/default`);
-
-module.exports = (key, config = {}) => async (invoiceId, data = {}) => {
-  const stripe = new Stripe(key);
-  if(!invoiceId) {
+module.exports = (config = {}) => async (invoiceObj, data = {}) => {
+  if(!invoiceObj) {
     throw new Error('missing_invoice_id');
   }
-  const invoice = await stripe.invoices.retrieve(invoiceId);
-  const tpld = template(Object.assign({
+  if(!config.template) {
+    throw new Error('missing_template');
+  }
+  var userTemplate = require(config.template);
+
+  const tpld = userTemplate(Object.assign({
     currency_symbol: '$',
     label_invoice: 'invoice',
     label_invoice_to: 'invoice to',
@@ -40,12 +40,12 @@ module.exports = (key, config = {}) => async (invoiceId, data = {}) => {
     client_company_name: 'Client Company',
     number: '12345',
     currency_position_before: true,
-    language: 'en',
-  }, invoice, config, data));
+    language: 'en'
+  }, invoiceObj, config, data));
   return wkhtmltopdf(pug.compileFile(tpld.body)(Object.assign(tpld.data, {
     moment,
     path,
     fs,
     sizeOf
-  })), { pageSize: 'letter' });
+  })), { pageSize: 'A4' });
 }

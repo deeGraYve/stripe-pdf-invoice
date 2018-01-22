@@ -1,0 +1,102 @@
+-
+  date_formatted = moment.unix(date).locale(language).format(date_format);
+  due_date_formatted = (due_days && !isNaN(due_days)) ? moment.unix(date).add(due_days, 'day').locale(language).format(date_format) : date_formatted;
+
+  company_logo_path = company_logo ? path.resolve(company_logo.toString()) : null;
+  if(company_logo_path && fs.existsSync(company_logo_path)) {
+    dimensions = sizeOf(company_logo);
+    logo_height = dimensions.height*(300/dimensions.width);
+  }
+
+  total = (total/100).toFixed(2);
+  subtotal = (subtotal/100).toFixed(2);
+  tax_percent = tax_percent || 0;
+
+  lines.data.forEach(line => {
+    line.price = (line.type == 'subscription') ? (line.plan.amount/100).toFixed(2) : (line.amount/100).toFixed(2);
+    line.amount = (line.amount/100).toFixed(2);
+    if(!line.description && line.type == 'subscription') {
+      line.description = ((line.quantity > 1) ? line.quantity + ' * ' : '') + line.plan.name;
+      if(line.period) {
+        line.period.start = moment.unix(line.period.start).locale(language).format(date_format);
+        line.period.end = moment.unix(line.period.end).locale(language).format(date_format);
+        line.description += ' ' + line.period.start + ' - ' + line.period.end;
+      }
+    }
+  });
+doctype html
+html.no-js
+  head
+    meta(charset='utf-8')
+    meta(http-equiv='X-UA-Compatible', content='IE=edge')
+    title
+    meta(name='description', content='')
+    meta(name='viewport', content='width=device-width, initial-scale=1')
+    each sheet in css
+      link(rel='stylesheet', href=sheet, type='text/css')
+    style
+      if color
+        | .total h1 {
+        |   color: #{color};
+        | }
+  body
+    div.container
+      div.row
+        div.col-xs-6
+          img.img-rounded.img-responsive(src=company_logo)
+        div.col-xs-6
+          h4.pull-right(style='white-space:pre;')
+            | #{date_formatted}
+            | #{label_invoice.toUpperCase()}: ##{number}
+        div.col-xs-12  
+          h4(style='white-space:pre;')
+            | #{label_invoice_by.toUpperCase()}: #{company_name}
+            |
+            | #{label_invoice_to.toUpperCase()}: #{client_company_name}
+            | #{client_company_address}
+            | #{client_company_zipcode} / #{client_company_city}
+            | #{client_company_country}
+          h2.total
+            | Total: 
+            if currency_position_before
+              | #{currency_symbol}
+            | #{total}  
+            if !currency_position_before
+              | #{currency_symbol}
+          h4 #{label_due_on} #{due_date_formatted}
+        div.col-xs-12  
+          table.table.table-bordered.table-striped
+            thead
+              tr
+                th #{label_description.toUpperCase()}
+                th #{label_unit.toUpperCase()}
+                th #{label_price.toUpperCase()}
+                th #{label_amount.toUpperCase()}
+            tbody
+              each line in lines.data
+                tr
+                  td #{line.description || 'Item description'}
+                  td #{line.quantity}
+                  td #{line.price}
+                  td #{line.amount}
+        div.col-md-12
+          strong.pull-right(style='white-space:pre;font-size:15pt')
+            if !currency_position_before
+              | #{currency_symbol}          
+            | #{label_subtotal.toUpperCase()}:
+            if currency_position_before
+              | #{currency_symbol}
+            | #{subtotal}
+            if !currency_position_before
+              | #{currency_symbol}
+            |
+            | #{label_vat.toUpperCase()}: #{tax_percent}%
+            | #{label_total.toUpperCase()}: 
+            if currency_position_before
+              | #{currency_symbol}
+            | #{total}
+            if !currency_position_before
+              | #{currency_symbol}   
+    
+
+
